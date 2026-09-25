@@ -1,0 +1,63 @@
+// Medora — fictional clinic demo (portfolio project).
+// See CLAUDE.md for the double-booking-prevention rationale behind using a
+// real database (mirrors vestra-demo's coupon-quantity rationale).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
+}
+
+model Specialty {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  slug      String   @unique
+  doctors   Doctor[]
+  createdAt DateTime @default(now())
+}
+
+model Doctor {
+  id           String        @id @default(cuid())
+  name         String
+  bio          String?
+  active       Boolean       @default(true)
+  specialtyId  String
+  specialty    Specialty     @relation(fields: [specialtyId], references: [id])
+  appointments Appointment[]
+  createdAt    DateTime      @default(now())
+}
+
+model Patient {
+  id           String        @id @default(cuid())
+  name         String
+  phone        String        @unique
+  email        String?
+  appointments Appointment[]
+  createdAt    DateTime      @default(now())
+}
+
+enum AppointmentStatus {
+  CONFIRMADO
+  ATENDIDO
+  CANCELADO
+}
+
+model Appointment {
+  id        String            @id @default(cuid())
+  doctorId  String
+  doctor    Doctor            @relation(fields: [doctorId], references: [id])
+  patientId String
+  patient   Patient           @relation(fields: [patientId], references: [id])
+  date      DateTime
+  reason    String
+  status    AppointmentStatus @default(CONFIRMADO)
+  notes     String?
+  createdAt DateTime          @default(now())
+
+  @@index([doctorId, date])
+  @@index([patientId])
+}
